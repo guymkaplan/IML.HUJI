@@ -120,7 +120,7 @@ class UnivariateGaussian:
         :return: the PDF of a single sample
         """
         coof = 1/math.sqrt(sigma * 2 * math.pi)
-        exponent = math.exp(-0.5*((sample-mu/math.sqrt(sigma))**2))
+        exponent = math.exp((-1/(2*sigma))*((sample-mu)**2))
         return coof * exponent
 
 
@@ -172,7 +172,9 @@ class MultivariateGaussian:
         """
         self.mu_ = np.mean(X, axis=0)  # along the rows. #TODO: if samples arrive per col than change axis=0
         # no need for ddof as default computes sum(X)/N-1:
-        self.cov_ = np.cov(X, rowvar=False)
+        self.cov_ = np.cov(X)
+        self.cov_det_ = np.linalg.det(self.cov_)
+        self.inv_cov_ = np.linalg.inv(self.cov_)
         self.fitted_ = True
         return self
 
@@ -197,8 +199,7 @@ class MultivariateGaussian:
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
         pdf_on_mat = np.vectorize(self.probability_density_func_multi)
-        self.cov_det_ = np.linalg.det(self.cov_)
-        self.inv_cov_ = np.linalg.inv(self.cov_)
+
         return pdf_on_mat(X)
 
     @staticmethod
@@ -220,8 +221,11 @@ class MultivariateGaussian:
         log_likelihood: float
             log-likelihood calculated over all input data and under given parameters of Gaussian
         """
+        A = np.linalg.inv(cov)
+        detA = np.linalg.det(A)
+        coof = np.log(1/(((2*math.pi)**len(A)) * detA)**(len(X)/2))
         delta = X - mu
-        return -np.sum(delta @ cov * delta) # <x_1, Ax_1> +...+ <x_n, Ax_n>
+        return coof * -0.5 * np.sum(np.dot(delta, A @ delta))  # <x_1, Ax_1> +...+ <x_n, Ax_n>
 
 
     def probability_density_func_multi(self, samples: np.ndarray) -> float:
@@ -233,9 +237,7 @@ class MultivariateGaussian:
         :param samples: n samples
         :return: the PDF of a multivariate gaussian sample
         """
-        # TODO: how do the samples arrive? each column is a set of samples,
-        #  or each row is?
-        coof = 1/math.sqrt(((math.pi * 2) ** len(self.cov_)) * np.linalg.det(self.cov_))
+        coof = 1/math.sqrt(((math.pi * 2) ** len(self.cov_)) * self.cov_det_)
         delta = samples-self.mu_
         exponent = math.exp(-0.5*(np.transpose(delta) @ self.inv_cov_ @ delta))
         return coof * exponent
