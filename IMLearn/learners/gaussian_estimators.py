@@ -56,8 +56,11 @@ class UnivariateGaussian:
         estimator is either biased or unbiased). Then sets `self.fitted_` attribute to `True`
         """
         self.mu_ = X.mean()
-        self.var_ = X.var()  # TODO maybe drop the ddof
-
+        # n-1 is for unbiased, n is for biased
+        if self.biased_:
+            self.var_ = X.var()
+        else:
+            self.var_ = X.var(ddof=1)
         self.fitted_ = True
         return self
 
@@ -104,10 +107,9 @@ class UnivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        coof = -(1/(2*sigma))
-        samples_minus_mu_squared = np.sum((X-mu)**2)
+        return -(len(X)/2) * math.log(2 * math.pi * (sigma)) - (np.sum(
+            ((X - mu) ** 2)) / (2 * (sigma)))
 
-        return coof * samples_minus_mu_squared
 
     @staticmethod
     def probability_density_func_uni(mu: float, sigma: float, sample: float) -> float:
@@ -170,9 +172,9 @@ class MultivariateGaussian:
         Sets `self.mu_`, `self.cov_` attributes according to calculated estimation.
         Then sets `self.fitted_` attribute to `True`
         """
-        self.mu_ = np.mean(X, axis=0)  # along the rows. #TODO: if samples arrive per col than change axis=0
+        self.mu_ = np.mean(X, axis=0)
         # no need for ddof as default computes sum(X)/N-1:
-        self.cov_ = np.cov(X)
+        self.cov_ = np.cov(X, rowvar=False)
         self.cov_det_ = np.linalg.det(self.cov_)
         self.inv_cov_ = np.linalg.inv(self.cov_)
         self.fitted_ = True
@@ -223,9 +225,12 @@ class MultivariateGaussian:
         """
         A = np.linalg.inv(cov)
         detA = np.linalg.det(A)
-        coof = np.log(1/(((2*math.pi)**len(A)) * detA)**(len(X)/2))
+        coof = -((len(X) * len(A))/2) * np.log(2 * np.pi) - ((len(X)/2) * np.log(detA))
         delta = X - mu
-        return coof * -0.5 * np.sum(np.dot(delta, A @ delta))  # <x_1, Ax_1> +...+ <x_n, Ax_n>
+        return coof - (0.5 * np.sum((delta @ A) * delta))  # <x_1, Ax_1> +...+ <x_n, Ax_n>
+
+        # return (len(X) / 2 * (np.log(1 / (1 / np.sqrt(np.linalg.det(cov) * ((2 * math.pi) ** (len(cov)))))))) - \
+        #        (0.5 * np.sum(((X - mu) @ (np.linalg.inv(cov))) * (X - mu)))
 
 
     def probability_density_func_multi(self, samples: np.ndarray) -> float:
