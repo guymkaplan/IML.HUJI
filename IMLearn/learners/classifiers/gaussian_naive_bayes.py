@@ -19,7 +19,7 @@ class GaussianNaiveBayes(BaseEstimator):
             The estimated features means for each class. To be set in `GaussianNaiveBayes.fit`
 
         self.vars_ : np.ndarray of shape (n_classes, n_features)
-            The estimated features variances for each class. To be set in `GaussianNaiveBayes.fit`
+            The estimated features stds for each class. To be set in `GaussianNaiveBayes.fit`
 
         self.pi_: np.ndarray of shape (n_classes)
             The estimated class probabilities. To be set in `GaussianNaiveBayes.fit`
