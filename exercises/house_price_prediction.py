@@ -1,4 +1,3 @@
-import sklearn.linear_model
 from sklearn.model_selection import ParameterGrid
 
 from IMLearn.utils import split_train_test
