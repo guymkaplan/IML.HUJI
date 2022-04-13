@@ -80,7 +80,7 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series,
 if __name__ == '__main__':
     np.random.seed(0)
     # Question 1 - Load and preprocessing of housing prices dataset
-    X, y = load_data("C:/Users/X240/IML.HUJI/datasets/house_prices.csv")
+    X, y = load_data("../datasets/house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
     feature_evaluation(X, y, "G:/My Drive/Courses/2B/IML")

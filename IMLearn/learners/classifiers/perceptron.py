@@ -33,10 +33,12 @@ class Perceptron(BaseEstimator):
         to be filled in `Perceptron.fit` function.
 
     """
+
     def __init__(self,
                  include_intercept: bool = True,
                  max_iter: int = 1000,
-                 callback: Callable[[Perceptron, np.ndarray, int], None] = default_callback):
+                 callback: Callable[
+                     [Perceptron, np.ndarray, int], None] = default_callback):
         """
         Instantiate a Perceptron classifier
 
@@ -90,7 +92,17 @@ class Perceptron(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.fit_intercept_`
         """
-        raise NotImplementedError()
+        w = np.zeros(len(y))
+        for t in range(self.max_iter_):
+            # naive:
+            for i in range(len(y)):
+                if y[i] * (w @ X[:, i]) <= 0:
+                    w = w + (y[i] * X[:, i])
+                    break
+                else:
+                    self.coefs_ = w
+                    return
+        self.coefs_ = w
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
