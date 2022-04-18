@@ -10,6 +10,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from math import atan2, pi
 
+X_IML_HUJI_DATASETS_ = "C:\\Users\\X240\\IML.HUJI\\datasets\\"
+
 
 def load_dataset(filename: str) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -102,24 +104,23 @@ def compare_gaussian_classifiers():
     """
     for f in ["gaussian1.npy", "gaussian2.npy"]:
         # Load dataset
-        X = np.load("C:\\Users\\X240\\IML.HUJI\\datasets\\" + f)
+        X = np.load(X_IML_HUJI_DATASETS_ + f)
 
         # Fit models and predict over training set
         X_data = X[:, :-1]
         y_data = X[:, -1]
         train_X, test_X, train_y, test_y = sklearn.model_selection.train_test_split(
             X_data, y_data)
-        gaussian = GaussianNaiveBayes().fit(X=train_X, y=train_y)
+        gnb = GaussianNaiveBayes().fit(X=train_X, y=train_y)
         lda = LDA().fit(X=train_X, y=train_y)
-        classes = np.unique(y_data)
-        gaussian_predict = gaussian.predict(test_X)
+        gnb_predict = gnb.predict(test_X)
         lda_predict = lda.predict(test_X)
 
         # Plot a figure with two suplots, showing the Gaussian Naive Bayes predictions on the left and LDA predictions
         # on the right. Plot title should specify dataset used and subplot titles should specify algorithm and accuracy
         # Create subplots
         from IMLearn.metrics import accuracy
-        gnb_accuracy = accuracy(test_y, gaussian_predict)
+        gnb_accuracy = accuracy(test_y, gnb_predict)
         lda_accuracy = accuracy(test_y, lda_predict)
         symbols = np.array(["circle", "x", "diamond"])
         fig = make_subplots(rows=1, cols=2, subplot_titles=[f"Gaussian Naive Bayes prediction accuracy: {gnb_accuracy}",f"LDA prediction accuracy: {lda_accuracy}"],
@@ -135,7 +136,7 @@ def compare_gaussian_classifiers():
             go.Scatter(x=test_X[:, 0], y=test_X[:, 1], mode="markers",
                        showlegend=False,
                        marker=dict(
-                           color=gaussian_predict.astype(int),
+                           color=gnb_predict.astype(int),
                            symbol=symbols[
                                test_y.astype(int)])),
             rows=1, cols=1)
@@ -147,7 +148,7 @@ def compare_gaussian_classifiers():
 
         # Add `X` dots specifying fitted Gaussians' means
         fig.add_trace(
-            go.Scatter(x=gaussian.mu_[:, 0], y=lda.mu_[:, 1], mode="markers",
+            go.Scatter(x=gnb.mu_[:, 0], y=lda.mu_[:, 1], mode="markers",
                        marker=dict(color="black", symbol="x", size=8),
                        showlegend=False), row=1, col=1)
         fig.add_trace(go.Scatter(x=lda.mu_[:,0], y=lda.mu_[:,1], mode="markers",marker=dict(color="black", symbol="x", size=8), showlegend=False ),row=1, col=2)
@@ -156,8 +157,8 @@ def compare_gaussian_classifiers():
         for i in range(len(lda.classes_)):
             fig.add_trace(get_ellipse(lda.mu_[i], lda.cov_), row=1,
                           col=2)
-            fig.add_trace(get_ellipse(gaussian.mu_[i],
-                                      np.diag(gaussian.vars_[i])),
+            fig.add_trace(get_ellipse(gnb.mu_[i],
+                                      np.diag(gnb.vars_[i])),
                           row=1, col=1)
         fig.show()
 
