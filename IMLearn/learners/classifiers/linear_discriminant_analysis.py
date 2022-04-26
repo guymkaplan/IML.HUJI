@@ -50,11 +50,13 @@ class LDA(BaseEstimator):
         """
         self.classes_ = np.unique(y)
         k = len(self.classes_)
-        self.mu_, self.pi_ = np.ndarray((k,X.shape[1])),np.ndarray((k,))
+        self.mu_, self.pi_, self.cov_ = np.ndarray((k,X.shape[1])),np.ndarray((k,)), np.zeros((X.shape[1], X.shape[1]))
         for i in range(k):
             self.mu_[i] = np.array(X[y == self.classes_[i]].mean(axis=0))
             self.pi_[i] = np.count_nonzero(y == self.classes_[i]) / len(y)
-        self.cov_ = np.cov(X, rowvar=False)
+            cov_calc = X[y==self.classes_[i]] - self.mu_[i,:]
+            self.cov_ += cov_calc.T @ cov_calc
+        self.cov_ /= (X.shape[0] - k)
         self._cov_inv = np.linalg.inv(self.cov_)
         self.fitted_ = True
 

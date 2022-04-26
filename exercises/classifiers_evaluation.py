@@ -10,7 +10,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from math import atan2, pi
 
-X_IML_HUJI_DATASETS_ = "C:\\Users\\X240\\IML.HUJI\\datasets\\"
+DATASETS_PATH = "../datasets/"
+
 
 
 def load_dataset(filename: str) -> Tuple[np.ndarray, np.ndarray]:
@@ -46,7 +47,7 @@ def run_perceptron():
     for n, f in [("Linearly Separable", "linearly_separable.npy"),
                  ("Linearly Inseparable", "linearly_inseparable.npy")]:
         # Load dataset
-        X = np.load("C:\\Users\\X240\\IML.HUJI\\datasets\\" + f)
+        X = np.load(DATASETS_PATH + f)
 
         # Fit Perceptron and record loss in each fit iteration
         losses = []
@@ -104,43 +105,48 @@ def compare_gaussian_classifiers():
     """
     for f in ["gaussian1.npy", "gaussian2.npy"]:
         # Load dataset
-        X = np.load(X_IML_HUJI_DATASETS_ + f)
+        X = np.load(DATASETS_PATH + f)
 
         # Fit models and predict over training set
         X_data = X[:, :-1]
         y_data = X[:, -1]
-        train_X, test_X, train_y, test_y = sklearn.model_selection.train_test_split(
-            X_data, y_data)
-        gnb = GaussianNaiveBayes().fit(X=train_X, y=train_y)
-        lda = LDA().fit(X=train_X, y=train_y)
-        gnb_predict = gnb.predict(test_X)
-        lda_predict = lda.predict(test_X)
+
+
+        gnb = GaussianNaiveBayes().fit(X=X_data, y=y_data)
+        lda = LDA().fit(X=X_data, y=y_data)
+
+        gnb_predict = gnb.predict(X_data)
+        lda_predict = lda.predict(X_data)
 
         # Plot a figure with two suplots, showing the Gaussian Naive Bayes predictions on the left and LDA predictions
         # on the right. Plot title should specify dataset used and subplot titles should specify algorithm and accuracy
         # Create subplots
         from IMLearn.metrics import accuracy
-        gnb_accuracy = accuracy(test_y, gnb_predict)
-        lda_accuracy = accuracy(test_y, lda_predict)
+
+        gnb_accuracy = accuracy(y_data, gnb_predict)
+        lda_accuracy = accuracy(y_data, lda_predict)
+
+
+
         symbols = np.array(["circle", "x", "diamond"])
         fig = make_subplots(rows=1, cols=2, subplot_titles=[f"Gaussian Naive Bayes prediction accuracy: {gnb_accuracy}",f"LDA prediction accuracy: {lda_accuracy}"],
                             horizontal_spacing=0.01, vertical_spacing=.03)
+
         fig.add_traces(
-            go.Scatter(x=test_X[:, 0], y=test_X[:, 1], mode="markers",
+            go.Scatter(x=X_data[:, 0], y=X_data[:, 1], mode="markers",
                        showlegend=False,
                        marker=dict(color=lda_predict.astype(int),
                                    symbol=symbols[
-                                       test_y.astype(
+                                       y_data.astype(
                                            int)])), rows=1, cols=2)
         fig.add_traces(
-            go.Scatter(x=test_X[:, 0], y=test_X[:, 1], mode="markers",
+            go.Scatter(x=X_data[:, 0], y=X_data[:, 1], mode="markers",
                        showlegend=False,
                        marker=dict(
                            color=gnb_predict.astype(int),
                            symbol=symbols[
-                               test_y.astype(int)])),
+                               y_data.astype(int)])),
             rows=1, cols=1)
-
 
 
         # Add traces for data-points setting symbols and colors
@@ -164,5 +170,7 @@ def compare_gaussian_classifiers():
 
 if __name__ == '__main__':
     np.random.seed(0)
-    # run_perceptron()
+
+
+    run_perceptron()
     compare_gaussian_classifiers()

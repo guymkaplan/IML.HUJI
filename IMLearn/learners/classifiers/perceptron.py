@@ -80,7 +80,6 @@ class Perceptron(BaseEstimator):
             X = np.concatenate((np.ones((len(X), 1)), X), axis=1)
         self.coefs_ = np.zeros(X.shape[1])
         for t in range(self.max_iter_):
-            # naive:
             flag = True
             for i in range(len(y)):
                 if y[i] * (self.coefs_ @ X[i, :]) <= 0:

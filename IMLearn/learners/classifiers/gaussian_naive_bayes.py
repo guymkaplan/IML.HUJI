@@ -90,7 +90,7 @@ class GaussianNaiveBayes(BaseEstimator):
             vec = np.ndarray((len(self.classes_),))
             for k in range(len(self.classes_)):
                 a_k = np.log(self.pi_[k])
-                b_k = np.sum(((X[j] - self.mu_[k]) ** 2) + 2 * self.vars_[k])
+                b_k = np.sum(((X[j] - self.mu_[k]) ** 2) / (2 * self.vars_[k]))
                 vec[k] = a_k - b_k
             likelihood[j] = vec
         return likelihood
