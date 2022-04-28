@@ -43,12 +43,12 @@ class GaussianNaiveBayes(BaseEstimator):
         """
         self.classes_ = np.unique(y)
         k = len(self.classes_)
-        self.mu_, self.pi_, self.vars_ = np.ndarray((k,X.shape[1])),np.ndarray((k,)),np.ndarray((k,X.shape[1]))
+        self.mu_, self.pi_, self.vars_ = np.ndarray(
+            (k, X.shape[1])), np.ndarray((k,)), np.ndarray((k, X.shape[1]))
         for i in range(k):
             self.vars_[i] = np.var(X[y == i], axis=0)
             self.mu_[i] = np.array(X[y == self.classes_[i]].mean(axis=0))
             self.pi_[i] = np.count_nonzero(y == self.classes_[i]) / len(y)
-
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -90,11 +90,12 @@ class GaussianNaiveBayes(BaseEstimator):
             vec = np.ndarray((len(self.classes_),))
             for k in range(len(self.classes_)):
                 a_k = np.log(self.pi_[k])
-                b_k = np.sum(((X[j] - self.mu_[k]) ** 2) / (2 * self.vars_[k]))
+                b_k = np.sum(((X[j] - self.mu_[k]) ** 2) / (
+                            2 * self.vars_[k]) + 0.5 * np.log(
+                    2 * np.pi * self.vars_[k]))
                 vec[k] = a_k - b_k
             likelihood[j] = vec
         return likelihood
-
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
