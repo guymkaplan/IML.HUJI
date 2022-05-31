@@ -38,22 +38,43 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     validation_score: float
         Average validation score over folds
     """
-    S = np.stack((X, y), axis=-1)
+    vector = (X.ndim == 1)
+    if vector:
+        S = np.stack((X, y), axis=-1) # for vector
+    else:
+        S = np.concatenate((X, y), axis=1)  # for matrix
+
     sets = np.array_split(S, cv)
     train_errors = np.ndarray((cv,))
     val_errors = np.ndarray((cv,))
     for i in range(cv):
         current_sets = np.delete(sets, i, 0)
-        current_X = np.concatenate(current_sets, axis=0)[:, 0]
-        current_y = np.concatenate(current_sets, axis=0)[:, -1]
-        model = estimator.fit(current_X, current_y)
+        if vector:
+            current_X = np.concatenate(current_sets, axis=0)[:, 0]
+            current_y = np.concatenate(current_sets, axis=0)[:, -1]
+            model = estimator.fit(current_X, current_y)
+            y_hat_dev = model.predict(sets[i][:, 0])
+            y_true_dev = sets[i][:, -1]
+            val_errors[i] = scoring(y_hat_dev, y_true_dev)
+        else:
+            current_X = np.concatenate(current_sets, axis=0)[:, :-1]
+            current_y = np.concatenate(current_sets, axis=0)[:, -1]
+            model = estimator.fit(current_X, current_y)
+            y_hat_dev = model.predict(sets[i][:, :-1])
+            y_true_dev = sets[i][:, -1]
+            val_errors[i] = scoring(y_hat_dev, y_true_dev)
+        # model = estimator.fit(current_X, current_y)
 
         y_hat_without_dev = model.predict(current_X)
         y_true_without_dev = current_y
         train_errors[i] = scoring(y_hat_without_dev, y_true_without_dev)
-
-        y_hat_dev = model.predict(sets[i][:,0])
-        y_true_dev = sets[i][:, -1]
-        val_errors[i] = scoring(y_hat_dev, y_true_dev)
+        # if vector:
+        #     y_hat_dev = model.predict(sets[i][:, 0])
+        #     y_true_dev = sets[i][:, -1]
+        #     val_errors[i] = scoring(y_hat_dev, y_true_dev)
+        # else:
+        #     y_hat_dev = model.predict(sets[i][:,:-1])
+        #     y_true_dev = sets[i][:, -1]
+        #     val_errors[i] = scoring(y_hat_dev, y_true_dev)
 
     return float(np.mean(train_errors)), float(np.mean(val_errors))

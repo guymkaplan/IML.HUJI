@@ -64,9 +64,9 @@ class RidgeRegression(BaseEstimator):
         """
         if self.include_intercept_:
             X = np.concatenate((np.ones((len(X), 1)), X),axis=1)
-        V, S, U = svd(X)
-        S = S / (S ** 2 + self.lam_) #TODO: see if this works
-        self.coefs_ = V @ np.diag(S) @ U.T @ y
+        U, S, V = svd(X, full_matrices=False)
+        S = S / (S ** 2 + self.lam_)
+        self.coefs_ = ((V.T * S) @ U.T) @ y
 
 
 
@@ -86,10 +86,8 @@ class RidgeRegression(BaseEstimator):
             Predicted responses of given samples
         """
         if self.include_intercept_:
-            predictions = np.concatenate((np.ones((len(X), 1)), X), axis=1) @ self.coefs_
-        else:
-            predictions = X @ self.coefs_
-        return predictions
+            return (X @ self.coefs_[1:]) + self.coefs_[0]
+        return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """

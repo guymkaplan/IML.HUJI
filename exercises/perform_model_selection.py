@@ -63,8 +63,9 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     # Question 2 - Perform CV for polynomial fitting with degrees 0,1,...,10
     K = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     train_err, val_err = np.ndarray((11,)), np.ndarray((11,))
+    # train_X, train_y = np.reshape(train_X, (1, train_X.shape[0])), np.reshape(train_y, (1, train_y.shape[0]))
     for k in K:
-        train_err[k], val_err[k] = cross_validate(PolynomialFitting(k), train_X, train_y, scoring=mean_square_error,
+        train_err[k], val_err[k] = cross_validate(PolynomialFitting(k), train_X,train_y, scoring=mean_square_error,
                                                   cv=5)
 
     fig2 = go.Figure()
@@ -98,24 +99,59 @@ def select_regularization_parameter(n_samples: int = 50,
     """
     # Question 6 - Load diabetes dataset and split into training and testing portions
     X, y = datasets.load_diabetes(return_X_y=True)
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(train_size=n_samples)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X,y,train_size=n_samples)
 
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
-    lams = np.linspace(start=0, stop=50, num=n_evaluations)
+    lams = np.linspace(start=0.001, stop=2, num=n_evaluations)
     train_err_ridge, val_err_ridge, train_err_lasso, val_err_lasso = np.ndarray((n_evaluations,)), np.ndarray(
         (n_evaluations,)), np.ndarray((n_evaluations,)), np.ndarray((n_evaluations,))
-    for l in lams:
-        train_err_ridge[l], val_err_ridge[l] = cross_validate(RidgeRegression(lam=l), X_train, y_train,
+    y_train = np.reshape(y_train, (50,1))
+    for l in range(len(lams)):
+        train_err_ridge[l], val_err_ridge[l] = cross_validate(RidgeRegression(lam=lams[l]), X_train, y_train,
                                                               scoring=mean_square_error)
-        train_err_lasso[l], val_err_lasso[l] = cross_validate(Lasso(alpha=l), X_train, y_train,
+        train_err_lasso[l], val_err_lasso[l] = cross_validate(Lasso(alpha=lams[l]), X_train, y_train,
                                                               scoring=mean_square_error)
 
-        # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
-    raise NotImplementedError()
+    fig2 = make_subplots(rows=1, cols=2,
+                         subplot_titles=["Ridge Regression", "Lasso Regression"],
+                         horizontal_spacing=0.01, vertical_spacing=.03)
+
+
+
+
+
+    fig2.add_traces([go.Scatter(x=lams, y=train_err_ridge, mode="markers+lines", name="Ridge regression train error"),
+                 go.Scatter(x=lams, y=val_err_ridge,
+                            mode="markers+lines", name="Ridge regression validation error")], rows = 1, cols = 1)
+
+    fig2.add_traces([go.Scatter(x=lams, y=train_err_lasso, mode="markers+lines", name="Lasso regression train error"),
+                 go.Scatter(x=lams, y=val_err_ridge,
+                            mode="markers+lines",name="Lasso regression validation error")], rows = 1, cols = 2)
+
+
+    fig2.show()
+# Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
+    best_ridge = lams[int(np.argmin(val_err_ridge))]
+    best_lasso = lams[int(np.argmin(val_err_lasso))]
+
+    print(f"Best performing ridge lambda: {best_ridge}")
+    print(f"Best performing lasso lambda: {best_lasso}")
+    
+    ridge_model_mse = RidgeRegression(lam=best_ridge).fit(X_train, y_train).loss(X_test, y_test)
+    lasso_model = Lasso(alpha=best_lasso)
+    lasso_model.fit(X_train,y_train)
+    lasso_model_mse = mean_square_error(lasso_model.predict(X_test), y_test)
+    regression_mse = LinearRegression().fit(X_train, y_train).loss(X_test, y_test)
+    print(f"Ridge test error using best lambda: {ridge_model_mse}")
+    print(f"Lasso test error using best lambda: {lasso_model_mse}")
+    print(f"Least Squares test error: {regression_mse}")
+
+
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    # select_polynomial_degree()
-    # select_polynomial_degree(noise=0)
+    select_polynomial_degree()
+    select_polynomial_degree(n_samples=100,noise=0)
     select_polynomial_degree(n_samples=1500, noise=10)
+    select_regularization_parameter()
