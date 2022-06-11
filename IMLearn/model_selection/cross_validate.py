@@ -38,43 +38,14 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     validation_score: float
         Average validation score over folds
     """
-    vector = (X.ndim == 1)
-    if vector:
-        S = np.stack((X, y), axis=-1) # for vector
-    else:
-        S = np.concatenate((X, y), axis=1)  # for matrix
+    X_splitted, y_splitted = np.array_split(X, cv), np.array_split(y, cv)
+    score_train, score_val = np.ndarray((cv,), dtype=object), np.ndarray((cv,), dtype=object)
 
-    sets = np.array_split(S, cv)
-    train_errors = np.ndarray((cv,))
-    val_errors = np.ndarray((cv,))
-    for i in range(cv):
-        current_sets = np.delete(sets, i, 0)
-        if vector:
-            current_X = np.concatenate(current_sets, axis=0)[:, 0]
-            current_y = np.concatenate(current_sets, axis=0)[:, -1]
-            model = estimator.fit(current_X, current_y)
-            y_hat_dev = model.predict(sets[i][:, 0])
-            y_true_dev = sets[i][:, -1]
-            val_errors[i] = scoring(y_hat_dev, y_true_dev)
-        else:
-            current_X = np.concatenate(current_sets, axis=0)[:, :-1]
-            current_y = np.concatenate(current_sets, axis=0)[:, -1]
-            model = estimator.fit(current_X, current_y)
-            y_hat_dev = model.predict(sets[i][:, :-1])
-            y_true_dev = sets[i][:, -1]
-            val_errors[i] = scoring(y_hat_dev, y_true_dev)
-        # model = estimator.fit(current_X, current_y)
+    for k in range(cv):
+        train_data = np.concatenate(np.delete(X_splitted, k, axis=0), axis=0)
+        labels = np.concatenate(np.delete(y_splitted, k, axis=0), axis=0)
+        estimator_fitted = estimator.fit(train_data, labels)
+        score_train[k] = scoring(labels, estimator_fitted.predict(train_data))
+        score_val[k] = scoring(y_splitted[k], estimator_fitted.predict(X_splitted[k]))
 
-        y_hat_without_dev = model.predict(current_X)
-        y_true_without_dev = current_y
-        train_errors[i] = scoring(y_hat_without_dev, y_true_without_dev)
-        # if vector:
-        #     y_hat_dev = model.predict(sets[i][:, 0])
-        #     y_true_dev = sets[i][:, -1]
-        #     val_errors[i] = scoring(y_hat_dev, y_true_dev)
-        # else:
-        #     y_hat_dev = model.predict(sets[i][:,:-1])
-        #     y_true_dev = sets[i][:, -1]
-        #     val_errors[i] = scoring(y_hat_dev, y_true_dev)
-
-    return float(np.mean(train_errors)), float(np.mean(val_errors))
+    return float(np.mean(score_train)), float(np.mean(score_val))
